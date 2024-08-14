@@ -437,7 +437,7 @@ namespace StrongboxRolling
             //}
             
 
-            goodMods = new Regex(@$"{Settings.ModsRegex}", RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+            
             
 
             string[] labelsBefore = FindAllLabels(sbLabel);
@@ -456,7 +456,7 @@ namespace StrongboxRolling
                 if (GetScoursFromInv().Any() && GetAlchsFromInv().Any())
                 {
                     CraftWithItem(GetScoursFromInv().First(), sbLabel);
-                    sbLabel = GetClosestChest();
+                    
                     //CraftWithItem(GetAlchsFromInv().First(), pickItItem);
                 }
             }
@@ -476,7 +476,7 @@ namespace StrongboxRolling
                         {
                             yield break;
                         }
-                        sbLabel = GetClosestChest();
+                        
                     }
                 }
                 else if (GetAltsFromInv().Any())
@@ -487,7 +487,7 @@ namespace StrongboxRolling
                     {
                         yield break;
                     }
-                    sbLabel = GetClosestChest();
+                    
                 }
             }
             else if (magicPropsC.Mods.Count() < 1)
@@ -496,7 +496,7 @@ namespace StrongboxRolling
                 {
                     prevMods = FindAllLabels(sbLabel);
                     CraftWithItem(GetWisFromInv().First(), sbLabel);
-                    sbLabel = GetClosestChest();
+                    
                     //continue;
                     //CraftWithItem(GetWisFromInv().First(), pickItItem);
                 }
@@ -518,7 +518,7 @@ namespace StrongboxRolling
                     {
                         yield break;
                     }
-                    sbLabel = GetClosestChest();
+                    
                 }
                 else
                 {
@@ -692,6 +692,10 @@ namespace StrongboxRolling
         }
         private void CraftWithItem(InventSlotItem e, LabelOnGround toCraft)
         {
+            if (FullWork)
+            {
+                return;
+            }
             toCraft = GetClosestChest();
             string[] labels = FindAllLabels(toCraft);
             List<string> toLog = new();
@@ -699,9 +703,13 @@ namespace StrongboxRolling
             toLog.Add(@$"{DateTime.Now.ToString("yyyy-mm-dd_T")}");
             toLog.Add(@$"{e.Item.RenderName}");
             toLog.AddRange(labels);
+            string allMods = string.Join(" ", toLog);
+            if (allMods.ToLower().Contains("stream") || allMods.ToLower().Contains("3 rare"))
+            {
 
+            }
             File.AppendAllLines(@"./craftingLog.txt",toLog);
-            if (CheckMods())
+            if (CheckMods(toLog))
             {
                 return;
             }
@@ -807,11 +815,36 @@ namespace StrongboxRolling
 
             return botLeftOfLabel with { X = centerOfLabel.X + 10, Y = prevY - 60 };
         }
+        public static Regex Weird = new(@"[^A-Za-z0-9\ ]");
         private bool CheckMods()
         {
+            goodMods = new Regex(@$"{Settings.ModsRegex}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
             string allMods = string.Join(" ", FindAllLabels(GetClosestChest()));
+            allMods = Weird.Replace(allMods,"").ToLower();
+            if (allMods.Contains("stream") || allMods.Contains("3 rare"))
+            {
 
-            if (goodMods.IsMatch(allMods))
+            }
+            if (goodMods.IsMatch(allMods.ToLower()))
+            {
+                File.AppendAllText("./LabelLog.txt", allMods);
+                pickItCoroutine.Pause();
+                FullWork = true;
+                return true;
+            }
+            return false;
+        }
+        private bool CheckMods(IEnumerable<string> labels)
+        {
+
+            goodMods = new Regex(@$"{Settings.ModsRegex}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            string allMods = string.Join(" ", labels);
+            allMods = Weird.Replace(allMods, "").ToLower();
+            if (allMods.Contains("stream")|| allMods.Contains("3 rare"))
+            {
+
+            }
+            if (goodMods.IsMatch(allMods.ToLower()))
             {
                 File.AppendAllText("./LabelLog.txt", allMods);
                 pickItCoroutine.Pause();

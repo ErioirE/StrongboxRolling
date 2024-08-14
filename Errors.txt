@@ -1,0 +1,2 @@
+Build failed:
+[8/13/2024 20:27:37, CSC(0, 0)] CS2001: Source file 'C:\Users\DVS\Downloads\ExileApi_240728-1.0.0+69743245db06fe4de594aaff0dca060aa8185876-dirty\Plugins\Source\StrongboxRolling\obj\Debug\StrongboxRolling.GeneratedMSBuildEditorConfig.editorconfig' could not be found.

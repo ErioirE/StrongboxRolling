@@ -6,7 +6,7 @@ namespace StrongboxRolling
 {
     public class StrongboxRollingSettings : ISettings
     {
-        public static readonly string defaultRegex = @"(cart|ambush|harbin|harvest|divination|domination|horned|misc|essence).*scarab|stream";
+        public static readonly string defaultRegex = @"(cart|ambush|harbin|harvest|divination|domination|horned|misc|essence).*scarab|stream|stream";
         public StrongboxRollingSettings()
         {
             Enable = new ToggleNode(false);

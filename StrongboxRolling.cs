@@ -252,7 +252,7 @@ namespace StrongboxRolling
         {
             try
             {
-                return InventoryItems.InventorySlotItems.Where(x => x.Item.Metadata.Contains(metadataToFind)).ToArray();
+                return InventoryItems.InventorySlotItems.Where(x => x.Item.Metadata.Contains(metadataToFind)).OrderBy(x=> x.PosX).ThenBy(x=> x.PosY).ToArray();
             }
             catch (Exception ex)
             {

@@ -49,7 +49,7 @@ namespace StrongboxRolling.Utils
             if (GetWisFromInv().Any() && labelsBefore.Where(x => x.ToLower().Contains("unidentified")).Any())
             {
                 prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                CraftWithItem(GetWisFromInv().First(), sbLabel);
+                CraftWithItem(GetWisFromInv().First());
                 if (!WaitForChange(labelsBefore))
                 {
                     yield break;
@@ -72,14 +72,14 @@ namespace StrongboxRolling.Utils
                 {
                     if (GetScoursFromInv().Any())
                     {
-                        CraftWithItem(GetScoursFromInv().First(), sbLabel);
+                        CraftWithItem(GetScoursFromInv().First());
                         return true;
                     }
                 }
                 else if (GetAlchsFromInv().Any())
                 {
                     prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                    CraftWithItem(GetAlchsFromInv().First(), sbLabel);
+                    CraftWithItem(GetAlchsFromInv().First());
                     if (!WaitForChange(prevMods))
                     {
                         return false;
@@ -98,13 +98,13 @@ namespace StrongboxRolling.Utils
             {
                 if (magicPropsC.Mods.Count() > 2 && GetScoursFromInv().Any())
                 {
-                    CraftWithItem(GetScoursFromInv().First(), sbLabel);
+                    CraftWithItem(GetScoursFromInv().First());
                     return true;
                 }
                 else if (magicPropsC.Mods.Count() is 0 && GetTransmutesFromInv().Any())
                 {
                     prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                    CraftWithItem(GetTransmutesFromInv().First(), sbLabel);
+                    CraftWithItem(GetTransmutesFromInv().First());
                     if (!WaitForChange(prevMods))
                     {
                         return false;
@@ -116,7 +116,7 @@ namespace StrongboxRolling.Utils
                     if (GetAugsFromInv().Any())
                     {
                         prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                        CraftWithItem(GetAugsFromInv().First(), sbLabel);
+                        CraftWithItem(GetAugsFromInv().First());
                         if (!WaitForChange(prevMods))
                         {
                             return false;
@@ -127,7 +127,7 @@ namespace StrongboxRolling.Utils
                 else if (GetAltsFromInv().Any())
                 {
                     prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                    CraftWithItem(GetAltsFromInv().First(), sbLabel);
+                    CraftWithItem(GetAltsFromInv().First());
                     if (!WaitForChange(prevMods))
                     {
                         return false;
@@ -175,13 +175,13 @@ namespace StrongboxRolling.Utils
             }
             return true;
         }
-        internal void CraftWithItem(InventSlotItem e, LabelOnGround toCraft)
+        internal void CraftWithItem(InventSlotItem e)
         {
             if (instance.FullWork)
             {
                 return;
             }
-            toCraft = instance.GetClosestChest();
+            LabelOnGround toCraft = instance.GetClosestChest();
             string[] labels = StaticHelpers.FindAllLabels(toCraft);
             List<string> toLog = new();
 
@@ -194,7 +194,7 @@ namespace StrongboxRolling.Utils
 
             }
             File.AppendAllLines(@"./craftingLog.txt", toLog);
-            if (CheckMods())
+            if (CheckMods() && e.Item.Metadata != "Metadata/Items/Currency/CurrencyAddModToMagic")
             {               
                 return;
             }
@@ -288,7 +288,7 @@ namespace StrongboxRolling.Utils
                         {
                             if (GetAugsFromInv().Any())
                             {
-                                CraftWithItem(GetAugsFromInv().First(), chest);
+                                CraftWithItem(GetAugsFromInv().First());
                             }
                         }
                         instance.pickItCoroutine.Pause();
@@ -305,7 +305,7 @@ namespace StrongboxRolling.Utils
                     {
                         if (GetAugsFromInv().Any())
                         {
-                            CraftWithItem(GetAugsFromInv().First(), chest);
+                            CraftWithItem(GetAugsFromInv().First());
                         }
                     }
                     instance.pickItCoroutine.Pause();

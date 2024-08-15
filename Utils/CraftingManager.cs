@@ -189,10 +189,7 @@ namespace StrongboxRolling.Utils
             toLog.Add(@$"{e.Item.RenderName}");
             toLog.AddRange(labels);
             string allMods = string.Join(" ", toLog);
-            if (allMods.ToLower().Contains("stream") || allMods.ToLower().Contains("3 rare"))
-            {
-
-            }
+           
             File.AppendAllLines(@"./craftingLog.txt", toLog);
             if (CheckMods() && e.Item.Metadata != "Metadata/Items/Currency/CurrencyAddModToMagic")
             {               
@@ -284,13 +281,13 @@ namespace StrongboxRolling.Utils
                     if (goodMods.IsMatch(s))
                     {
                         File.AppendAllText("./LabelLog.txt", s);
-                        if (magicPropsC.Mods.Count == 1)
-                        {
-                            if (GetAugsFromInv().Any())
-                            {
-                                CraftWithItem(GetAugsFromInv().First());
-                            }
-                        }
+                        //if (magicPropsC.Mods.Count == 1)
+                        //{
+                        //    if (GetAugsFromInv().Any())
+                        //    {
+                        //        CraftWithItem(GetAugsFromInv().First());
+                        //    }
+                        //}
                         instance.pickItCoroutine.Pause();
                         instance.FullWork = true;
 

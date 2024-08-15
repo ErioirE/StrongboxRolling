@@ -7,7 +7,8 @@ namespace StrongboxRolling
 {
     public class StrongboxRollingSettings : ISettings
     {
-        public static readonly string defaultRegex = @"(cart|ambush|harbin|harvest|divination|domination|horned|misc|essence).*scarab|stream|stream";
+        public static readonly string defaultRegex = @"[2-9] addi.{1,20}(cart|ambush|harbin|harvest|divination|horned|essence).*scarab|stream|rare mon|stream";
+        public static readonly string defaultSpecialBoxRegex = @"(additional item).*(quantity)|((quantity).*(additional item))|[2-9] addi.{1,20}(cart|ambush|harbin|harvest|divination|horned|essence).*scarab|stream|stream";
         public StrongboxRollingSettings()
         {
             Enable = new ToggleNode(false);

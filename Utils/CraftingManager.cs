@@ -198,14 +198,13 @@ namespace StrongboxRolling.Utils
             {               
                 return;
             }
-
+            if (!instance.GameController.Window.IsForeground()) return;
             if (!IngameState.pTheGame.IngameState.IngameUi.InventoryPanel.IsVisibleLocal)
             {
                 SendKeys.SendWait("i");
 
                 Task.Delay(instance.Settings.BoxCraftingMidStepDelay).Wait();
             }
-            if (!instance.GameController.Window.IsForeground()) return;
             Mouse.MoveCursorToPosition(instance.GetPos(e));
             Task.Delay(instance.Settings.BoxCraftingMidStepDelay).Wait();
             if (!WaitForMouseIcon(MouseActionType.Free))
@@ -279,20 +278,22 @@ namespace StrongboxRolling.Utils
                 allMods = allMods.Select(x => Weird.Replace(x, "").ToLower()).ToArray();
                 string added = String.Join(" ", allMods);
                 chest.ItemOnGround.TryGetComponent<ObjectMagicProperties>(out ObjectMagicProperties magicPropsC);
-                if (magicPropsC.Mods.Count == 1)
-                {
-                    if (GetAugsFromInv().Any())
-                    {
-                        CraftWithItem(GetAugsFromInv().First(), chest);
-                    }
-                }
+                
                 foreach (string s in allMods)
                 {
                     if (goodMods.IsMatch(s))
                     {
                         File.AppendAllText("./LabelLog.txt", s);
+                        if (magicPropsC.Mods.Count == 1)
+                        {
+                            if (GetAugsFromInv().Any())
+                            {
+                                CraftWithItem(GetAugsFromInv().First(), chest);
+                            }
+                        }
                         instance.pickItCoroutine.Pause();
                         instance.FullWork = true;
+
                         return true;
                     }
                 }
@@ -300,6 +301,13 @@ namespace StrongboxRolling.Utils
                 if (goodMods.IsMatch(added))
                 {
                     File.AppendAllText("./LabelLog.txt", "Warning: Grouped mods matched where separate did not. Investigate?" + added);
+                    if (magicPropsC.Mods.Count == 1)
+                    {
+                        if (GetAugsFromInv().Any())
+                        {
+                            CraftWithItem(GetAugsFromInv().First(), chest);
+                        }
+                    }
                     instance.pickItCoroutine.Pause();
                     instance.FullWork = true;
                     return true;

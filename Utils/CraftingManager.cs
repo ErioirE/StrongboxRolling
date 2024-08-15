@@ -38,6 +38,15 @@ namespace StrongboxRolling.Utils
             SBType boxType = StaticHelpers.GetStrongboxType(sbLabel);
 
             string[] labelsBefore = StaticHelpers.FindAllLabels(sbLabel);
+            if (GetWisFromInv().Any() && labelsBefore.Where(x => x.ToLower().Contains("unidentified")).Any())
+            {
+                prevMods = StaticHelpers.FindAllLabels(sbLabel);
+                CraftWithItem(GetWisFromInv().First());
+                if (!WaitForChange(labelsBefore))
+                {
+                    yield return true;
+                }
+            }
             sbLabel.ItemOnGround.TryGetComponent<ObjectMagicProperties>(out ObjectMagicProperties magicPropsC);
             if (magicPropsC is null)
             {
@@ -47,15 +56,7 @@ namespace StrongboxRolling.Utils
             {                
                 yield return true;
             }
-            if (GetWisFromInv().Any() && labelsBefore.Where(x => x.ToLower().Contains("unidentified")).Any())
-            {
-                prevMods = StaticHelpers.FindAllLabels(sbLabel);
-                CraftWithItem(GetWisFromInv().First());
-                if (!WaitForChange(labelsBefore))
-                {
-                    yield break;
-                }
-            }
+            
             if (!instance.Settings.BoxCraftingUseAltsAugs || CheckBoxTypeOverride(boxType))
             {
                 ScourAlchStep(magicPropsC, sbLabel);

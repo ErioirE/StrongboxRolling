@@ -183,6 +183,7 @@ namespace StrongboxRolling.Utils
             {
                 return;
             }
+           
             LabelOnGround toCraft = instance.GetClosestChest();
             string[] labels = StaticHelpers.FindAllLabels(toCraft);
             List<string> toLog = new();
@@ -190,6 +191,10 @@ namespace StrongboxRolling.Utils
             toLog.Add(@$"{DateTime.Now.ToString("yyyy-mm-dd_T")}");
             toLog.Add(@$"{e.Item.RenderName}");
             toLog.AddRange(labels);
+            if (!e.Item.Metadata.ToLower().Contains("ident") && labels.Where(x => x.ToLower().Contains("unidentified")).Any())
+            {
+                return;
+            }
             string allMods = string.Join(" ", toLog);
            
             File.AppendAllLines(@"./craftingLog.txt", toLog);
@@ -234,7 +239,12 @@ namespace StrongboxRolling.Utils
             }
             if (isTargeted is not null && isTargeted.Value)
             {
+
                 Task.Delay(instance.Settings.BoxCraftingMidStepDelay).Wait();
+                if (!WaitForMouseIcon(MouseActionType.UseItem))
+                {
+                    return;
+                }
                 Mouse.LeftClick(instance.Settings.BoxCraftingMidStepDelay);
                 WaitForMouseIcon(MouseActionType.Free);
             }

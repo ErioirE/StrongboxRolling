@@ -32,7 +32,8 @@ namespace StrongboxRolling.Utils
             }
             if (instance.GameController.Player.GetComponent<Actor>().isMoving)
             {
-                yield return instance.wait2ms;
+                instance.FullWork = true;
+                yield break;
             }
             SBType boxType = StaticHelpers.GetStrongboxType(sbLabel);
 

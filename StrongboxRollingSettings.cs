@@ -1,5 +1,6 @@
 using ExileCore.Shared.Interfaces;
 using ExileCore.Shared.Nodes;
+using System;
 using System.Windows.Forms;
 
 namespace StrongboxRolling
@@ -18,6 +19,12 @@ namespace StrongboxRolling
             BoxCraftingMidStepDelay = new RangeNode<int>(40, 0, 200);
             BoxCraftingStepDelay = new RangeNode<int>(0, 0, 400);
             ModsRegex = defaultRegex;
+            ArcanistRegex = defaultRegex;
+            DivinerRegex = defaultRegex;
+            CartogRegex = defaultRegex;
+            UseAlchScourForArcanist = new ToggleNode(true);
+            UseAlchScourForDiviner = new ToggleNode(true);
+            UseAlchScourForCartog = new ToggleNode(true);
 
         }
 
@@ -29,8 +36,13 @@ namespace StrongboxRolling
         public ToggleNode BoxCraftingUseAltsAugs { get; set; } = new ToggleNode(false);
         public RangeNode<int> BoxCraftingMidStepDelay { get; set; } = new RangeNode<int>(0, 0, 200);
         public RangeNode<int> BoxCraftingStepDelay { get; set; } = new RangeNode<int>(0, 0, 200);
-        public string ModsRegex { get; set; }
-
+        public String ModsRegex { get; set; }
+        public String ArcanistRegex { get; set; }
+        public ToggleNode UseAlchScourForArcanist { get; set; }
+        public String DivinerRegex { get; set; }
+        public ToggleNode UseAlchScourForDiviner { get; set; }
+        public String CartogRegex { get; set; }
+        public ToggleNode UseAlchScourForCartog { get; set; }
         public HotkeyNode LazyLootingPauseKey { get; set; } = new HotkeyNode(Keys.Space);
 
 

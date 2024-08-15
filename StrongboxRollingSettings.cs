@@ -20,9 +20,9 @@ namespace StrongboxRolling
             BoxCraftingMidStepDelay = new RangeNode<int>(40, 0, 200);
             BoxCraftingStepDelay = new RangeNode<int>(0, 0, 400);
             ModsRegex = defaultRegex;
-            ArcanistRegex = defaultRegex;
-            DivinerRegex = defaultRegex;
-            CartogRegex = defaultRegex;
+            ArcanistRegex = defaultSpecialBoxRegex;
+            DivinerRegex = defaultSpecialBoxRegex;
+            CartogRegex = defaultSpecialBoxRegex;
             UseAlchScourForArcanist = new ToggleNode(true);
             UseAlchScourForDiviner = new ToggleNode(true);
             UseAlchScourForCartog = new ToggleNode(true);

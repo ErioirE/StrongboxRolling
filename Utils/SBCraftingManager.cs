@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,16 +14,16 @@ using static ExileCore.PoEMemory.MemoryObjects.ServerInventory;
 
 namespace StrongboxRolling.Utils
 {
-    internal class CraftingManager
+    public class SBCraftingManager
     {
         public static Regex Weird = new(@"[^A-Za-z0-9\ ]");
-        internal string[] prevMods = Array.Empty<string>();
-        internal StrongboxRolling instance;
-        internal CraftingManager(StrongboxRolling ins)
+        public string[] prevMods = Array.Empty<string>();
+        public StrongboxRolling instance;
+        public SBCraftingManager(StrongboxRolling ins)
         {
             instance = ins;
         }
-        internal IEnumerator CraftBox(LabelOnGround sbLabel)
+        public IEnumerator CraftBox(LabelOnGround sbLabel)
         {
             if (sbLabel is null)
             {
@@ -53,20 +52,20 @@ namespace StrongboxRolling.Utils
                 yield return true;
             }
             if (CheckMods())
-            {                
+            {
                 yield return true;
             }
-            
-            if (!instance.Settings.BoxCraftingUseAltsAugs || CheckBoxTypeOverride(boxType))
+
+            if (!instance.Settings.BoxCraftingUseAltsAugs || CheckBoxTypeAlchOverride(boxType))
             {
                 ScourAlchStep(magicPropsC, sbLabel);
             }
             else if (instance.Settings.BoxCraftingUseAltsAugs)
             {
-                AlterStep(magicPropsC,sbLabel);
-            }            
+                AlterStep(magicPropsC, sbLabel);
+            }
         }
-        internal bool ScourAlchStep(ObjectMagicProperties magicPropsC, LabelOnGround sbLabel)
+        public bool ScourAlchStep(ObjectMagicProperties magicPropsC, LabelOnGround sbLabel)
         {
             try
             {
@@ -77,6 +76,13 @@ namespace StrongboxRolling.Utils
                         CraftWithItem(GetScoursFromInv().First());
                         return true;
                     }
+                }
+                else if (magicPropsC.Mods.Count == 0 &&
+                    CheckBoxTypeEngOverride(StaticHelpers.GetStrongboxType(sbLabel)) &&
+                    GetEngFromInv().Any() &&
+                    !HasMaxQuality(sbLabel))
+                {
+                    CraftWithItem(GetEngFromInv().FirstOrDefault());
                 }
                 else if (GetAlchsFromInv().Any())
                 {
@@ -94,7 +100,19 @@ namespace StrongboxRolling.Utils
             }
             return false;
         }
-        internal bool AlterStep(ObjectMagicProperties magicPropsC, LabelOnGround sbLabel)
+        public bool HasMaxQuality(LabelOnGround sbLabel)
+        {
+            string[] labels = StaticHelpers.FindAllLabels(sbLabel);
+            foreach (string label in labels)
+            {
+                if (label.Contains("<augmented>{+20%}"))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public bool AlterStep(ObjectMagicProperties magicPropsC, LabelOnGround sbLabel)
         {
             try
             {
@@ -143,7 +161,7 @@ namespace StrongboxRolling.Utils
             }
             return false;
         }
-        internal bool CheckBoxTypeOverride(SBType sb)
+        public bool CheckBoxTypeAlchOverride(SBType sb)
         {
             if (sb is SBType.Arcanist && instance.Settings.UseAlchScourForArcanist)
             {
@@ -159,7 +177,23 @@ namespace StrongboxRolling.Utils
             }
             return false;
         }
-        internal bool WaitForChange(string[] labelsBefore)
+        public bool CheckBoxTypeEngOverride(SBType sb)
+        {
+            if (sb is SBType.Arcanist && instance.Settings.UseEngForArcanist)
+            {
+                return true;
+            }
+            if (sb is SBType.Diviner && instance.Settings.UseEngForDiviner)
+            {
+                return true;
+            }
+            if (sb is SBType.Cartographer && instance.Settings.UseEngForCartog)
+            {
+                return true;
+            }
+            return false;
+        }
+        public bool WaitForChange(string[] labelsBefore)
         {
             int maxWait = 200;
             int totalWait = 0;
@@ -177,13 +211,13 @@ namespace StrongboxRolling.Utils
             }
             return true;
         }
-        internal void CraftWithItem(InventSlotItem e)
+        public void CraftWithItem(InventSlotItem e)
         {
             if (instance.FullWork)
             {
                 return;
             }
-           
+
             LabelOnGround toCraft = instance.GetClosestChest();
             string[] labels = StaticHelpers.FindAllLabels(toCraft);
             List<string> toLog = new();
@@ -196,10 +230,10 @@ namespace StrongboxRolling.Utils
                 return;
             }
             string allMods = string.Join(" ", toLog);
-           
+
             File.AppendAllLines(@"./craftingLog.txt", toLog);
             if (CheckMods() && e.Item.Metadata != "Metadata/Items/Currency/CurrencyAddModToMagic")
-            {               
+            {
                 return;
             }
             if (!instance.GameController.Window.IsForeground()) return;
@@ -211,12 +245,12 @@ namespace StrongboxRolling.Utils
             }
             Mouse.MoveCursorToPosition(instance.GetPos(e));
             Task.Delay(instance.Settings.BoxCraftingMidStepDelay).Wait();
-            if (!WaitForMouseIcon(MouseActionType.Free))
+            if (!StaticHelpers.WaitForMouseIcon(MouseActionType.Free, instance.GameController.IngameState.IngameUi.Cursor))
             {
                 return;
             }
             Mouse.RightClick(instance.Settings.BoxCraftingMidStepDelay);
-            if (!WaitForMouseIcon(MouseActionType.UseItem))
+            if (!StaticHelpers.WaitForMouseIcon(MouseActionType.UseItem, instance.GameController.IngameState.IngameUi.Cursor))
             {
                 return;
             }
@@ -241,12 +275,12 @@ namespace StrongboxRolling.Utils
             {
 
                 Task.Delay(instance.Settings.BoxCraftingMidStepDelay).Wait();
-                if (!WaitForMouseIcon(MouseActionType.UseItem))
+                if (!StaticHelpers.WaitForMouseIcon(MouseActionType.UseItem, instance.GameController.IngameState.IngameUi.Cursor))
                 {
                     return;
                 }
                 Mouse.LeftClick(instance.Settings.BoxCraftingMidStepDelay);
-                WaitForMouseIcon(MouseActionType.Free);
+                StaticHelpers.WaitForMouseIcon(MouseActionType.Free, instance.GameController.IngameState.IngameUi.Cursor);
             }
             else
             {
@@ -257,7 +291,7 @@ namespace StrongboxRolling.Utils
             Task.Delay(100).Wait();
 
         }
-        internal bool CheckMods()
+        public bool CheckMods()
         {
             try
             {
@@ -287,7 +321,7 @@ namespace StrongboxRolling.Utils
                 allMods = allMods.Select(x => Weird.Replace(x, "").ToLower()).ToArray();
                 string added = String.Join(" ", allMods);
                 chest.ItemOnGround.TryGetComponent<ObjectMagicProperties>(out ObjectMagicProperties magicPropsC);
-                
+
                 foreach (string s in allMods)
                 {
                     if (goodMods.IsMatch(s))
@@ -328,38 +362,9 @@ namespace StrongboxRolling.Utils
             }
             return false;
         }
-        internal bool WaitForMouseIcon(MouseActionType mat)
-        {
-            ExileCore.PoEMemory.MemoryObjects.Cursor cursor = instance.GameController.IngameState.IngameUi.Cursor;
 
-            bool usingItem = false;
-            int maxWait = 200;
-            int totalWait = 0;
 
-            while (!usingItem && totalWait < maxWait)
-            {
-                int delay = 1;
-
-                if (cursor.Action == mat)
-                {
-                    usingItem = true;
-                }
-
-                Task.Delay(delay).Wait();
-                totalWait += delay;
-            }
-
-            return usingItem;
-        }
-        internal static readonly string ScourCode = @"Metadata/Items/Currency/CurrencyConvertToNormal";
-        internal static readonly string AlchCode = @"Metadata/Items/Currency/CurrencyUpgradeToRare";
-        internal static readonly string EngineerCode = @"Metadata/Items/Currency/CurrencyStrongboxQuality";
-        internal static readonly string ChaosCode = @"Metadata/Items/Currency/CurrencyRerollRare";
-        internal static readonly string AltCode = @"Metadata/Items/Currency/CurrencyRerollMagic";
-        internal static readonly string TransmuteCode = @"Metadata/Items/Currency/CurrencyUpgradeToMagic";
-        internal static readonly string AugCode = @"Metadata/Items/Currency/CurrencyAddModToMagic";
-        internal static readonly string WisdomCode = @"Metadata/Items/Currency/CurrencyIdentification";
-        internal ServerInventory.InventSlotItem[] GetInvWithMD(string metadataToFind)
+        public ServerInventory.InventSlotItem[] GetInvWithMD(string metadataToFind)
         {
             try
             {
@@ -374,29 +379,33 @@ namespace StrongboxRolling.Utils
             }
             return Array.Empty<InventSlotItem>();
         }
-        internal InventSlotItem[] GetScoursFromInv()
+        public InventSlotItem[] GetScoursFromInv()
         {
-            return GetInvWithMD(ScourCode);
+            return GetInvWithMD(ItemCodes.ScourCode);
         }
-        internal InventSlotItem[] GetAlchsFromInv()
+        public InventSlotItem[] GetAlchsFromInv()
         {
-            return GetInvWithMD(AlchCode);
+            return GetInvWithMD(ItemCodes.AlchCode);
         }
-        internal InventSlotItem[] GetTransmutesFromInv()
+        public InventSlotItem[] GetTransmutesFromInv()
         {
-            return GetInvWithMD(TransmuteCode);
+            return GetInvWithMD(ItemCodes.TransmuteCode);
         }
-        internal InventSlotItem[] GetAugsFromInv()
+        public InventSlotItem[] GetAugsFromInv()
         {
-            return GetInvWithMD(AugCode);
+            return GetInvWithMD(ItemCodes.AugCode);
         }
-        internal InventSlotItem[] GetAltsFromInv()
+        public InventSlotItem[] GetAltsFromInv()
         {
-            return GetInvWithMD(AltCode);
+            return GetInvWithMD(ItemCodes.AltCode);
         }
-        internal InventSlotItem[] GetWisFromInv()
+        public InventSlotItem[] GetWisFromInv()
         {
-            return GetInvWithMD(WisdomCode);
+            return GetInvWithMD(ItemCodes.WisdomCode);
+        }
+        public InventSlotItem[] GetEngFromInv()
+        {
+            return GetInvWithMD(ItemCodes.EngineerCode);
         }
 
     }

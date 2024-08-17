@@ -19,6 +19,12 @@
     <Reference Include="ExileCore">
       <HintPath>..\..\..\ExileCore.dll</HintPath>
     </Reference>
+    <Reference Include="GameOffsets">
+      <HintPath>..\..\..\..\ExileApi_240331\GameOffsets.dll</HintPath>
+    </Reference>
+    <Reference Include="ItemFilterLibrary">
+      <HintPath>..\..\..\ItemFilterLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="Serilog">
       <HintPath>..\..\..\Serilog.dll</HintPath>
     </Reference>

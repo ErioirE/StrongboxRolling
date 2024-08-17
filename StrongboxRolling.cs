@@ -1,5 +1,6 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared;
@@ -15,12 +16,14 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 using static ExileCore.PoEMemory.MemoryObjects.ServerInventory;
 using Color = SharpDX.Color;
 using Input = ExileCore.Input;
 using RectangleF = SharpDX.RectangleF;
+using Stack = ExileCore.PoEMemory.Components.Stack;
 using Vector2 = SharpDX.Vector2;
 
 namespace StrongboxRolling
@@ -59,7 +62,8 @@ namespace StrongboxRolling
         public string UniqueRuleFile;
         internal WaitTime waitPlayerMove = new WaitTime(10);
         internal List<string> _customItems = new List<string>();
-        internal CraftingManager CraftingManager;
+        internal SBCraftingManager CraftingManager;
+        internal StashCraftingManager StashCraftingManager;
         public int[,] inventorySlots { get; set; } = new int[0, 0];
         public ServerInventory InventoryItems { get; set; }
         public static StrongboxRolling Controller { get; set; }
@@ -79,6 +83,7 @@ namespace StrongboxRolling
         {
             Controller = this;
             CraftingManager = new(this);
+            StashCraftingManager = new(this);
             pickItCoroutine = new Coroutine(MainWorkCoroutine(), this, "StrongboxRolling");
             Core.ParallelRunner.Run(pickItCoroutine);
             pickItCoroutine.Pause();
@@ -108,18 +113,29 @@ namespace StrongboxRolling
         {
             Settings.CraftBoxKey = ImGuiExtension.HotkeySelector("Craft box Key: " + Settings.CraftBoxKey.Value.ToString(), Settings.CraftBoxKey);
             Settings.CancelKey = ImGuiExtension.HotkeySelector("Key to cancel rolling: " + Settings.CancelKey.Value.ToString(), Settings.CancelKey);
+
             Settings.BoxCraftingUseAltsAugs.Value = ImGuiExtension.Checkbox("Roll strongboxes using Transmuts, Alts & Augs instead of Scour/Alch", Settings.BoxCraftingUseAltsAugs);
             Settings.BoxCraftingMidStepDelay.Value = ImGuiExtension.IntSlider("Box Crafting Mid-Step delay (wait for hover registration)", Settings.BoxCraftingMidStepDelay);
             Settings.BoxCraftingStepDelay.Value = ImGuiExtension.IntSlider("Box crafting step delay (between crafts)", Settings.BoxCraftingStepDelay);
+
             Settings.ModsRegex = ImGuiExtension.InputText("RegEx for mod text, I.E. 'Guarded by \\d rare monsters'. Not case sensitive", Settings.ModsRegex, 1024, ImGuiInputTextFlags.None);
+
             Settings.ArcanistRegex = ImGuiExtension.InputText("RegEx for Arcanist boxes (currency)", Settings.ArcanistRegex, 1024, ImGuiInputTextFlags.None);
             Settings.UseAlchScourForArcanist.Value = ImGuiExtension.Checkbox("Use Alch/Scour for Arcanist boxes", Settings.UseAlchScourForArcanist);
+            Settings.UseEngForArcanist.Value = ImGuiExtension.Checkbox("Use Engineer orbs on Arcanist boxes if available", Settings.UseEngForArcanist);
+
             Settings.DivinerRegex = ImGuiExtension.InputText("RegEx for Diviner boxes", Settings.DivinerRegex, 1024, ImGuiInputTextFlags.None);
             Settings.UseAlchScourForDiviner.Value = ImGuiExtension.Checkbox("Use Alch/Scour for Arcanist boxes", Settings.UseAlchScourForDiviner);
+            Settings.UseEngForDiviner.Value = ImGuiExtension.Checkbox("Use Engineer orbs on Diviner boxes if available", Settings.UseEngForDiviner);
+
             Settings.CartogRegex = ImGuiExtension.InputText("RegEx for Cartographer boxes", Settings.CartogRegex, 1024, ImGuiInputTextFlags.None);
             Settings.UseAlchScourForCartog.Value = ImGuiExtension.Checkbox("Use Alch/Scour for Arcanist boxes", Settings.UseAlchScourForCartog);
-            //Settings.OverrideItemPickup.Value = ImGuiExtension.Checkbox("Item Pickup Override", Settings.OverrideItemPickup); ImGui.SameLine();
-            //ImGuiExtension.ToolTip("Override item.CanPickup\n\rDO NOT enable this unless you know what you're doing!");
+            Settings.UseEngForCartog.Value = ImGuiExtension.Checkbox("Use Engineer orbs on Cartographer boxes if available", Settings.UseEngForCartog);
+
+            Settings.EnableStashCrafting.Value = ImGuiExtension.Checkbox("Enable stash crafting (WIP)", Settings.EnableStashCrafting);
+            Settings.StashCraftingStartHotKey = ImGuiExtension.HotkeySelector("Craft box Key: " + Settings.StashCraftingStartHotKey.Value.ToString(), Settings.StashCraftingStartHotKey);
+            Settings.StashCraftingRegex = ImGuiExtension.InputText("RegEx for stash crafting: ", Settings.StashCraftingRegex, 1024, ImGuiInputTextFlags.None);
+            
 
         }
 
@@ -129,37 +145,37 @@ namespace StrongboxRolling
         public override Job Tick()
         {
             List<string> toLog = new();
-            if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetTransmutesFromInv().Any())
-            {
-                toLog.Add("Trying to craft but no Orbs of Transmutation found in inventory.");
+            //if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetTransmutesFromInv().Any())
+            //{
+            //    toLog.Add("Trying to craft but no Orbs of Transmutation found in inventory.");
 
-            }
-            if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetAltsFromInv().Any())
-            {
-                toLog.Add("Trying to craft but no Orbs of Alteration found in inventory.");
-            }
-            if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetAugsFromInv().Any())
-            {
-                toLog.Add("Trying to craft but no Orbs of Augmentation found in inventory.");
-            }
-            if (!CraftingManager.GetScoursFromInv().Any())
-            {
-                toLog.Add("Trying to craft but no Orbs of Scouring found in inventory.");
-            }
-            if (
-                (
-                    Settings.UseAlchScourForArcanist||
-                    Settings.UseAlchScourForDiviner||
-                    Settings.UseAlchScourForCartog ||
-                    !Settings.BoxCraftingUseAltsAugs)
-                && !CraftingManager.GetAlchsFromInv().Any())
-            {
-                toLog.Add("Trying to craft but no Orbs of Alchemy found in inventory.");
-            }
-            for (int i = 0; i < toLog.Count; i++)
-            {
-                DrawText(toLog[i], i * 20);
-            }
+            //}
+            //if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetAltsFromInv().Any())
+            //{
+            //    toLog.Add("Trying to craft but no Orbs of Alteration found in inventory.");
+            //}
+            //if (Settings.BoxCraftingUseAltsAugs && !CraftingManager.GetAugsFromInv().Any())
+            //{
+            //    toLog.Add("Trying to craft but no Orbs of Augmentation found in inventory.");
+            //}
+            //if (!CraftingManager.GetScoursFromInv().Any())
+            //{
+            //    toLog.Add("Trying to craft but no Orbs of Scouring found in inventory.");
+            //}
+            //if (
+            //    (
+            //        Settings.UseAlchScourForArcanist||
+            //        Settings.UseAlchScourForDiviner||
+            //        Settings.UseAlchScourForCartog ||
+            //        !Settings.BoxCraftingUseAltsAugs)
+            //    && !CraftingManager.GetAlchsFromInv().Any())
+            //{
+            //    toLog.Add("Trying to craft but no Orbs of Alchemy found in inventory.");
+            //}
+            //for (int i = 0; i < toLog.Count; i++)
+            //{
+            //    DrawText(toLog[i], i * 20);
+            //}
             InventoryItems = GameController.Game.IngameState.ServerData.PlayerInventories[0].Inventory;
             inventorySlots = Misc.GetContainer2DArray(InventoryItems);
 
@@ -171,6 +187,21 @@ namespace StrongboxRolling
             }
 
             if (Input.GetKeyState(Settings.CraftBoxKey.Value))
+            {
+                DebugTimer.Restart();
+
+                if (pickItCoroutine.IsDone)
+                {
+                    var firstOrDefault = Core.ParallelRunner.Coroutines.FirstOrDefault(x => x.OwnerName == nameof(StrongboxRolling));
+
+                    if (firstOrDefault != null)
+                        pickItCoroutine = firstOrDefault;
+                }
+
+                pickItCoroutine.Resume();
+                FullWork = false;
+            }
+            else if (Input.GetKeyState(Settings.StashCraftingStartHotKey.Value))
             {
                 DebugTimer.Restart();
 
@@ -248,8 +279,15 @@ namespace StrongboxRolling
 
             if (!FullWork)
             {
+                if (IngameState.pTheGame.IngameState.IngameUi.StashElement.IsVisibleLocal)
+                {
+                    yield return (TryToCraftFromStash());
+                }
+                else
+                {
+                    yield return TryToCraftSB(GetClosestChest());
+                }
 
-                yield return TryToCraft(GetClosestChest());
                 //FullWork = true;
             }
         }
@@ -292,9 +330,29 @@ namespace StrongboxRolling
         }
 
 
+        internal IEnumerator TryToCraftFromStash()
+        {
 
 
-        internal IEnumerator TryToCraft(LabelOnGround sbLabel)
+            Entity? item = StashCraftingManager.GetItemInCraftingZone("$");
+            if (item is null)
+            {
+                FullWork = true;
+                yield break;
+            }
+            bool val = StashCraftingManager.CraftStep(new Regex(Settings.StashCraftingRegex),item);
+            if (val)
+            {
+                FullWork = true;
+                yield break;
+            }
+
+            //yield return waitForNextTry;
+
+            //   Mouse.MoveCursorToPosition(oldMousePosition);
+        }
+
+        internal IEnumerator TryToCraftSB(LabelOnGround sbLabel)
         {
 
 
@@ -369,6 +427,20 @@ namespace StrongboxRolling
         internal Vector2 GetPos(InventSlotItem l)
         {
             Vector2 centerOfItemLabel = l.GetClientRect().TopLeft;
+            RectangleF rectangleOfGameWindow = GameController.Window.GetWindowRectangleTimeCache;
+
+            var oldMousePosition = Mouse.GetCursorPositionVector();
+            _clickWindowOffset = rectangleOfGameWindow.TopLeft;
+            rectangleOfGameWindow.Inflate(-36, -36);
+            centerOfItemLabel.X += rectangleOfGameWindow.Left;
+            centerOfItemLabel.Y += rectangleOfGameWindow.Top;
+            return centerOfItemLabel;
+        }
+        internal Vector2 GetPos(Entity l)
+        {
+            RenderItem pos = l.GetComponent<RenderItem>();
+            
+            Vector2 centerOfItemLabel = l.GridPos;
             RectangleF rectangleOfGameWindow = GameController.Window.GetWindowRectangleTimeCache;
 
             var oldMousePosition = Mouse.GetCursorPositionVector();

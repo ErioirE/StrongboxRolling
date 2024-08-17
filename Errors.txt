@@ -1,0 +1,2 @@
+Build failed:
+[8/16/2024 19:41:01, C:\Users\DVS\Downloads\ExileApi_240728-1.0.0+69743245db06fe4de594aaff0dca060aa8185876-dirty\Plugins\Source\StrongboxRolling\StrongboxRolling.cs(325, 36)] CS0029: Cannot implicitly convert type 'ExileCore.PoEMemory.MemoryObjects.Entity' to 'ExileCore.PoEMemory.MemoryObjects.ServerInventory.InventSlotItem'

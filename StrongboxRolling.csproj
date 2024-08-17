@@ -23,7 +23,4 @@
       <HintPath>..\..\..\Serilog.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="del /q /f /s &quot;C:\Users\DVS\Downloads\ExileApi_240728-1.0.0+69743245db06fe4de594aaff0dca060aa8185876-dirty\Plugins\Temp\StrongboxRolling\*.*&quot;" />
-  </Target>
 </Project>
